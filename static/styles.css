@@ -1,0 +1,157 @@
+:root {
+    --mainColor: rgb(101, 195, 149);
+    --secColor: rgb(166, 114, 192);
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing:border-box;
+}
+
+@font-face {
+    font-family: 'ibm';
+    src: url('fontface/Web437_Acer_VGA_8x8-2y.woff') format('woff'),
+         url('fontface/Px437_Acer_VGA_8x8-2y.ttf')  format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    position: relative;
+    background-color: black; /* #d0cdc6 */
+    background-image: url(bg.jpg?v=3);
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    backdrop-filter: blur(14px);
+    color: white;
+    font-size: 14px;
+    font-family: 'ibm';
+    user-select: none;
+    overscroll-behavior: none;  /* disable scroll chaining */
+    user-select: none;          /* prevent text selection / hold highlight */
+}
+
+article {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50vw;
+    padding: 5vw;
+    text-align: center;
+}
+
+.togglePlayPauseBtn{
+    position: relative;
+    width: 33vw;
+    height: 40vw;
+    margin: auto;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    outline: none;
+}
+
+/* base for BOTH pseudo elems (important!) */
+.togglePlayPauseBtn::before,
+.togglePlayPauseBtn::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--mainColor);
+    clip-path: polygon(0 0, 100% 50%, 100% 50%, 0% 100%);
+    transition: clip-path 220ms ease-in-out;
+    will-change: clip-path;
+}
+.togglePlayPauseBtn::after{
+    transition: clip-path 185ms ease-in-out;
+}
+
+/* ▶ PLAY: draw the triangle only once (use ::before), hide ::after */
+.togglePlayPauseBtn:not(.pause)::before{
+    clip-path: polygon(0 0, 100% 50%, 100% 50%, 0% 100%);
+}
+.togglePlayPauseBtn:not(.pause)::after{
+    clip-path: polygon(0 85%, 100% 50%, 100% 50%, 0 15%);
+}
+
+/* ⏸ PAUSE: use both bars */
+.togglePlayPauseBtn.pause::before{
+    clip-path: polygon(0 0, 33% 0, 33% 100%, 0 100%);
+}
+.togglePlayPauseBtn.pause::after{
+    clip-path: polygon(66% 0, 100% 0, 100% 100%, 66% 100%);
+}
+  
+input[type="radio"] {display:  none;}
+input[type="radio"]:checked + label {
+    background-color: rgb(76, 179, 76) ;
+}
+
+select,
+input,
+label {
+    display: inline-block;
+    padding:1em .5em;
+    height:3em;
+    min-width:3em;
+    font-size: 14px;
+    font-family: 'ibm';
+    color:black;
+    background-color: var(--mainColor);
+    border: none;
+    border-radius: .35rem;
+    color: black;
+    transition: all 125ms ease-out;
+}
+
+select:active,
+input:active,
+label:active {
+    color: rgb(202, 202, 202);
+    background-color: var(--secColor);
+    transform: translateY(-4px);
+}
+
+h1 {
+    font-size: 1em;
+    font-weight: 100;
+    margin-bottom: 0.5em;
+}
+
+p {
+    margin-bottom: 1.75em;
+}
+
+a:link, a:visited, a:focus {
+	text-decoration: none;
+	outline: none;
+    color: inherit;
+    opacity: .65;
+}
+
+a:hover, a:active {
+	text-decoration: none;
+    opacity: 1;
+}
+
+a:focus {
+  outline: none;
+}
+
+@media all and (max-width: 900px) {
+    body {
+        font-size: 18px;
+    }
+
+    article {
+        width: 100%;
+        padding: 3rem;
+    }
+    article label {
+        margin-bottom: 0.5rem;
+    }
+}

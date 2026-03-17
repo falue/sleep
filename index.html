@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+  <title>sleep</title>
+
+  <script src="static/scripts.js?v=7" defer></script>
+  <!-- <script src="static/gameAudi5.js" defer></script> -->
+  <link rel="stylesheet" href="static/styles.css?v=7">
+  <script type="module">
+    import { GameAudio } from './static/gameAudio.js?v=7';
+  
+    window.addEventListener('DOMContentLoaded', () => {
+      window.GameAudio = GameAudio;
+      GameAudio.init();
+    });
+</script>
+
+</head>
+
+<body>
+  <article>
+    <div id="play" class="togglePlayPauseBtn" onclick="play();"></div>
+    <br>
+    <br>
+    <p>
+      <h1 style="min-height:37px; align-content: end;"><span id="audioName">idle</span></h1>
+      <input type="button" onclick="changeAudio(-1)" value="Prev audio">
+      <input type="button" onclick="changeAudio(1)" value="Next audio">
+    </p>
+    <p>
+      <h1><span id="pitch">speed 100%</span></h1>
+      <input type="button" onclick="setPitch(-0.1)" value="-">
+      <input type="button" onclick="setPitch(0.1)" value="+">
+    </p>
+    <p>
+      <h1 id="timeEnds">timeout</h1>
+
+      <!-- <input type="radio" id="timeout0.1" name="timeout" value="0.1" onclick="setDeepSleep(0.1)">
+      <label for="timeout0.1">0.1mins</label> -->
+
+      <input type="radio" id="timeout5" name="timeout" value="5" onclick="setDeepSleep(5)">
+      <label for="timeout5">5mins</label>
+
+      <input type="radio" id="timeout15" name="timeout" value="15" onclick="setDeepSleep(15)">
+      <label for="timeout15">15mins</label>
+
+      <input type="radio" id="timeout30" name="timeout" value="30" onclick="setDeepSleep(30)">
+      <label for="timeout30">30mins</label>
+
+      <input type="radio" id="timeout45" name="timeout" value="45" onclick="setDeepSleep(45)">
+      <label for="timeout45">45mins</label>
+
+      <input type="radio" id="timeout60" name="timeout" value="60" onclick="setDeepSleep(60)">
+      <label for="timeout60">60mins</label>
+
+      <input type="radio" id="timeoutClear" name="timeout" value="0" onclick="clearDeepSleep()">
+      <label for="timeoutClear">clear</label>
+    </p>
+
+    <!--  <input type="checkbox" id="North" name="directions" value="North">
+        <label for="North">North</label> -->
+  </article>
+
+</body>
+
+</html>
