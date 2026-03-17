@@ -41,7 +41,7 @@ async function play() {
   }
   console.log("playing file @index ", indexAudioFiles);
   swapIcon('play');
-  const { id, audioLength } = await GameAudio.playSound("static/audio"+ indexAudioFiles+".mp3?v="+version, { loop: true, crossfade: 3, fadeIn: 1, fadeOut: 1, pitch: pitch });
+  const { id, audioLength } = await GameAudio.playSound("static/audio/audio"+ indexAudioFiles+".mp3?v="+version, { loop: true, crossfade: 3, fadeIn: 1, fadeOut: 1, pitch: pitch });
   document.getElementById('audioName').innerHTML = `${audioNames[indexAudioFiles-1]}`;
   musicId = id;
   loading = false;
