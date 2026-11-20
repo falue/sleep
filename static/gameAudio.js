@@ -101,15 +101,17 @@ export const GameAudio = (() => {
       src.buffer = buffer;
       src.playbackRate.value = rate;
       src.detune.value = (finalPitch - 1) * 1200;
-      src.connect(gain).connect(_bus(category));
+      const out = ctx.createGain(); // per-sound output, faded by stopSound()
+      out.connect(_bus(category));
+      src.connect(gain).connect(out);
   
       const id = _newId();
-      const audioLength = buffer.duration / rate;
+      const audioLength = buffer.duration / (rate * 2 ** (src.detune.value / 1200)); // detune changes speed too
   
       const state = {
         id, category, buffer, rate, volume, detune: (finalPitch - 1) * 1200,
-        fadeOut, crossfade,
-        _voices: [{src, gain}], // active last voice
+        fadeOut, crossfade, out,
+        _voices: [{src, gain, start: _now()}], // scheduled voices, last = newest
         _resolve: null,         // for wait()
         _looping: loop,
         _stopped: false,
@@ -143,64 +145,46 @@ export const GameAudio = (() => {
         return { id, audioLength };
       }
   
-      // ----------- Crossfade loop engine (2-voice ping-pong) -----------
-      // We alternate A/B voices, pre-scheduling the next start at absolute
-      // AudioContext times while creating nodes a short moment beforehand.
-  
+      // ----------- Crossfade loop engine -----------
+      // Voices are pre-scheduled on the audio clock up to `horizon` seconds ahead,
+      // so throttled background timers (up to 1/min on mobile) cannot cause gaps.
+      const horizon = 300; // seconds
       const overlap = Math.min(crossfade, Math.max(0.05, audioLength * 0.9)); // clamp sanity
       const period = audioLength - overlap; // time between starts
       let nextStartAbs = _now() + period;   // first crossfade start time
-      let nextIs = 1; // next voice index (0/1)
-  
-      function scheduleNextCycle() {
-        if (state._stopped || !_playing.has(id)) return;
-  
-        // create next voice slightly ahead of start time
-        const createLeadMs = 1000; // create node ~1s before start time (background timers may lag)
-        const delayMs = Math.max(0, (nextStartAbs - _now()) * 1000 - createLeadMs);
-  
-        const tid = setTimeout(() => {
-          if (state._stopped || !_playing.has(id)) return;
-  
+
+      function scheduleAhead() {
+        if (state._stopped) return;
+        state._voices = state._voices.filter(v => v.start + audioLength > _now()); // drop finished
+
+        while (nextStartAbs < _now() + horizon) {
           const nextSrc = ctx.createBufferSource();
           const nextGain = ctx.createGain();
           nextSrc.buffer = buffer;
           nextSrc.playbackRate.value = rate;
           nextSrc.detune.value = state.detune;
-          nextSrc.connect(nextGain).connect(_bus(category));
-  
-          // get current active voice (the last one we created)
+          nextSrc.connect(nextGain).connect(out);
+
           const prev = state._voices[state._voices.length - 1];
-  
-          // program fades at absolute times
+
+          // crossfade at absolute times
           nextGain.gain.setValueAtTime(0, nextStartAbs);
           nextGain.gain.linearRampToValueAtTime(volume, nextStartAbs + overlap);
           prev.gain.gain.setValueAtTime(volume, nextStartAbs);
           prev.gain.gain.linearRampToValueAtTime(0, nextStartAbs + overlap);
-  
-          // start/stop
+
           nextSrc.start(nextStartAbs);
-          // stop previous a hair after fade to ensure cut
-          try { prev.src.stop(nextStartAbs + overlap + 0.02); } catch {}
-  
-          // track new as active
-          state._voices.push({src: nextSrc, gain: nextGain});
-          // keep only last 2 entries to avoid growth
-          if (state._voices.length > 2) state._voices.shift();
-  
-          // compute next cycle's absolute start time
+          prev.src.stop(nextStartAbs + overlap + 0.02);
+
+          state._voices.push({ src: nextSrc, gain: nextGain, start: nextStartAbs });
           nextStartAbs += period;
-  
-          // schedule another cycle
-          scheduleNextCycle();
-        }, delayMs);
-  
-        _trackTimer(id, tid);
+        }
+
+        _trackTimer(id, setTimeout(scheduleAhead, horizon / 2 * 1000));
       }
-  
-      // kick the engine
-      scheduleNextCycle();
-  
+
+      scheduleAhead();
+
       // NOTE: for crossfade loops, wait() will never resolve unless stopped.
       return { id, audioLength };
     }
@@ -234,11 +218,9 @@ export const GameAudio = (() => {
       // cancel crossfade engine timers
       _clearTimers(id);
   
-      // fade + stop all active voices
-      for (const v of st._voices) {
-        _fadeOut(v.gain, fade);
-        try { v.src.stop(_now() + Math.max(0, fade) + 0.01); } catch {}
-      }
+      // fade the sound's output, stop all scheduled voices after it
+      _fadeOut(st.out, fade);
+      for (const v of st._voices) v.src.stop(_now() + Math.max(0, fade) + 0.01);
   
       _playing.delete(id);
       if (st._resolve) st._resolve({ id, audioLength: st.buffer.duration / st.rate });
