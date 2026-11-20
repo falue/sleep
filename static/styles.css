@@ -47,8 +47,8 @@ article {
 
 .togglePlayPauseBtn{
     position: relative;
-    width: 33vw;
-    height: 40vw;
+    width: min(33vw, 165px);
+    aspect-ratio: 33 / 40;
     margin: auto;
     -webkit-tap-highlight-color: transparent;
     user-select: none;

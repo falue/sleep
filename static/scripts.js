@@ -17,17 +17,23 @@ let audioNames = [
   "Lawine",
   "Freight train Hardbrücke",
   "Mare Di San Lorenzo Al Mare",
-  "52 Blue",  // https://www.pmel.noaa.gov/acoustics/whales/sounds/sounds_52blue.html
+  "52 Blue",  // https://www.pmel.noaa.gov/acoustics/whales/sounds/sounds_52blue.html - speed 10%, pitched down, cut off everything above 65hz
 ]
 
 let maxOfAudioFiles = audioNames.length;
+
+// lock screen / notification controls
+navigator.mediaSession.setActionHandler('play', () => { if(!musicId) play(); });
+navigator.mediaSession.setActionHandler('pause', () => { if(musicId) play(); });
+navigator.mediaSession.setActionHandler('nexttrack', () => changeAudio(1));
+navigator.mediaSession.setActionHandler('previoustrack', () => changeAudio(-1));
 
 async function play() {
   if(loading) {
     console.log("audio is already loading, abort")
     return
   }
-  document.getElementById('audioName').innerHTML = `(loading: ${audioNames[indexAudioFiles-1]})`;
+  document.getElementById('audioName').innerHTML = `[${audioNames[indexAudioFiles-1]}]`;
   loading = true;
   if(musicId) {
     console.log("Pause");
@@ -36,6 +42,7 @@ async function play() {
     document.getElementById('audioName').innerHTML = "paused";
     clearDeepSleep();
     swapIcon('pause');
+    navigator.mediaSession.playbackState = 'paused';
     loading = false;
     return;
   }
@@ -44,6 +51,8 @@ async function play() {
   const { id, audioLength } = await GameAudio.playSound("static/audio/audio"+ indexAudioFiles+".mp3?v="+version, { loop: true, crossfade: 3, fadeIn: 1, fadeOut: 1, pitch: pitch });
   document.getElementById('audioName').innerHTML = `${audioNames[indexAudioFiles-1]}`;
   musicId = id;
+  navigator.mediaSession.metadata = new MediaMetadata({ title: audioNames[indexAudioFiles-1], artist: 'sleep' });
+  navigator.mediaSession.playbackState = 'playing';
   loading = false;
 }
 
@@ -58,6 +67,7 @@ function setDeepSleep(mins) {
     timerSleepTight = setTimeout(() => {
       setGuiTime("Sleep tight.");
       swapIcon('pause');
+      navigator.mediaSession.playbackState = 'paused';
     }, fadeouttime*1000);
   }, mins * 60 * 1000); // 30 minutes = 30 * 60 seconds * 1000 milliseconds.
   setGuiTime("Sleep at " + calcTime(mins));

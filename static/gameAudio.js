@@ -1,6 +1,6 @@
 // gameAudio.js
 export const GameAudio = (() => {
-    let ctx, master, musicBus, sfxBus;
+    let ctx, master, musicBus, sfxBus, mediaEl, _pauseTimer;
     const _buffers = new Map();            // path -> AudioBuffer
     const _playing = new Map();            // id -> state object
     const _timers = new Map();             // id -> Set(timeoutIds) for crossfade engine
@@ -19,11 +19,19 @@ export const GameAudio = (() => {
       sfxBus = ctx.createGain();
       musicBus.connect(master);
       sfxBus.connect(master);
-      master.connect(ctx.destination);
+      // route output through a media element so mobile browsers treat the page as playing media
+      const dest = ctx.createMediaStreamDestination();
+      master.connect(dest);
+      mediaEl = new Audio();
+      mediaEl.srcObject = dest.stream;
       master.gain.value = musicBus.gain.value = sfxBus.gain.value = 1;
       console.log('[GameAudio] ready');
     }
-    async function resume() { if (ctx && ctx.state !== 'running') await ctx.resume(); }
+    async function resume() {
+      clearTimeout(_pauseTimer);
+      mediaEl.play();
+      if (ctx.state !== 'running') await ctx.resume();
+    }
   
     async function _load(path) {
       if (_buffers.has(path)) return _buffers.get(path);
@@ -148,7 +156,7 @@ export const GameAudio = (() => {
         if (state._stopped || !_playing.has(id)) return;
   
         // create next voice slightly ahead of start time
-        const createLeadMs = 60; // create node ~60ms before start time
+        const createLeadMs = 1000; // create node ~1s before start time (background timers may lag)
         const delayMs = Math.max(0, (nextStartAbs - _now()) * 1000 - createLeadMs);
   
         const tid = setTimeout(() => {
@@ -234,6 +242,10 @@ export const GameAudio = (() => {
   
       _playing.delete(id);
       if (st._resolve) st._resolve({ id, audioLength: st.buffer.duration / st.rate });
+
+      // release the media element once silent, so the browser stops treating the page as playing
+      clearTimeout(_pauseTimer);
+      _pauseTimer = setTimeout(() => { if (!_playing.size) mediaEl.pause(); }, (fade + 0.1) * 1000);
     }
   
     function stopAllSound(category = 'all', fade = 0) {
